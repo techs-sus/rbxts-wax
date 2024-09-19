@@ -2,6 +2,7 @@ import clipboard from "clipboardy";
 import { nanoid } from "nanoid";
 import fs from "fs/promises";
 const keys: Set<string> = new Set();
+const TARGET_PORT = 3000;
 
 const getScriptSource = async () => {
 	return await Bun.$`lune run wax -- bundle output=out/wax.luau ci-mode=true env-name=wax verbose=false`
@@ -19,22 +20,25 @@ const getScriptSource = async () => {
 
 const SERVING_URL =
 	process.argv[2] ||
-	(await Bun.$`devtunnel show -j`.quiet().then(async (v) => {
-		const id = JSON.parse(v.text()).tunnel.tunnelId;
+	(await Bun.$`devtunnel show -j`.quiet().then(async (initialHit) => {
+		const id = JSON.parse(initialHit.text()).tunnel.tunnelId;
+
+		// ensure TARGET_PORT is created
 		try {
-			await Bun.$`devtunnel port create ${id} -p 3000`.quiet();
+			await Bun.$`devtunnel port create ${id} -p ${TARGET_PORT}`.quiet();
 		} catch (e) {}
 
+		// spawn the host which forwards requests
 		const pid = Bun.spawn(["devtunnel", "host", "--allow-anonymous", id]).pid;
 		console.log(`spawned tunnel with pid ${pid}`);
-		// Bun.$`devtunnel host --allow-anonymous ${id}`.nothrow();
-		let url = undefined;
 
+		// look for url in json output
+		let url = undefined;
 		while (url === undefined) {
 			const showed = await Bun.$`devtunnel show -j`.quiet().then((v) => v.json());
 			const ports = showed.tunnel.ports;
 			for (const port of ports) {
-				if (port.portNumber === 3000 && port.portUri) {
+				if (port.portNumber === TARGET_PORT && port.portUri) {
 					url = port.portUri as string;
 					break;
 				}
@@ -73,6 +77,8 @@ Bun.serve({
 			status: 404,
 		});
 	},
+
+	port: TARGET_PORT,
 });
 
 await generateKey();
