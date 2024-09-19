@@ -53,13 +53,13 @@ const generateKey = async () => {
 	const key = nanoid(128);
 	keys.add(key);
 
-	await clipboard.write(`h/${SERVING_URL}key?key=${key}`);
+	await clipboard.write(`h/${SERVING_URL}?key=${key}`);
 };
 
 Bun.serve({
 	fetch: async (request: Request) => {
 		const url = new URL(request.url);
-		if (url.pathname === "/key") {
+		if (url.pathname === "/") {
 			const key = url.searchParams.get("key");
 			if (!key || !keys.has(key)) {
 				return new Response("return error('invalid key', 0)", { status: 404 });
