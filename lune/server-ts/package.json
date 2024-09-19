@@ -1,15 +1,16 @@
 {
-	"name": "server-ts",
-	"module": "index.ts",
-	"type": "module",
-	"devDependencies": {
-		"@types/bun": "latest"
-	},
-	"peerDependencies": {
-		"typescript": "^5.0.0"
-	},
-	"dependencies": {
-		"clipboardy": "^4.0.0",
-		"nanoid": "^5.0.7"
-	}
+  "name": "server-ts",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^6.0.1",
+    "clipboardy": "^4.0.0",
+    "nanoid": "^5.0.7"
+  }
 }

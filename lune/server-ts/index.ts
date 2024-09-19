@@ -1,6 +1,8 @@
 import clipboard from "clipboardy";
 import { nanoid } from "nanoid";
 import fs from "fs/promises";
+import { stdin, stdout } from "bun";
+import { confirm } from "@inquirer/prompts";
 const keys: Set<string> = new Set();
 const TARGET_PORT = 3000;
 
@@ -49,11 +51,12 @@ const SERVING_URL =
 		return url;
 	}));
 
-const generateKey = async () => {
+const generateKey = async (writeToClipboard: boolean = false) => {
 	const key = nanoid(128);
 	keys.add(key);
 
-	await clipboard.write(`h/${SERVING_URL}?key=${key}`);
+	const clipboardContents = `h/${SERVING_URL}?key=${key}`;
+	if (writeToClipboard) await clipboard.write(clipboardContents);
 };
 
 Bun.serve({
@@ -66,7 +69,7 @@ Bun.serve({
 			}
 
 			keys.delete(key);
-			await generateKey();
+			await generateKey(false);
 
 			return new Response(await getScriptSource());
 		}
@@ -79,4 +82,12 @@ Bun.serve({
 	port: TARGET_PORT,
 });
 
-await generateKey();
+while (true) {
+	if (
+		await confirm({
+			message: "Generate a new key?",
+		})
+	) {
+		await generateKey(true);
+	}
+}
