@@ -21,32 +21,30 @@ const getScriptSource = async () => {
 const SERVING_URL =
 	process.argv[2] ||
 	(await Bun.$`devtunnel show -j`.quiet().then(async (initialHit) => {
-		const id = JSON.parse(initialHit.text()).tunnel.tunnelId;
+		const id = initialHit.json().tunnel.tunnelId;
 
 		// ensure TARGET_PORT is created
-		try {
-			await Bun.$`devtunnel port create ${id} -p ${TARGET_PORT}`.quiet();
-		} catch (e) {}
+		await Bun.$`devtunnel port create ${id} -p ${TARGET_PORT}`.quiet().nothrow();
 
 		// spawn the host which forwards requests
 		const pid = Bun.spawn(["devtunnel", "host", "--allow-anonymous", id]).pid;
-		console.log(`spawned tunnel with pid ${pid}`);
+		console.log(`spawned tunnel with pid: ${pid}`);
 
 		// look for url in json output
 		let url = undefined;
 		while (url === undefined) {
-			const showed = await Bun.$`devtunnel show -j`.quiet().then((v) => v.json());
-			const ports = showed.tunnel.ports;
+			const tunnel = await Bun.$`devtunnel show -j`.quiet().then((v) => v.json().tunnel);
+			const ports = tunnel.ports;
 			for (const port of ports) {
 				if (port.portNumber === TARGET_PORT && port.portUri) {
 					url = port.portUri as string;
 					break;
 				}
 			}
-			console.log("waiting for tunnel to start");
+			console.log("waiting for tunnel to start...");
 		}
 
-		console.log(`got url ${url}`);
+		console.log(`got url: ${url}`);
 
 		return url;
 	}));
